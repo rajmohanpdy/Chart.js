@@ -3,15 +3,16 @@
 
 <head>
 	<title>Line Chart</title>
-	<script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.13.0/moment.min.js"></script>
-	<script src="../../../dist/Chart.js"></script>
+	<script src="../../../dist/chart.min.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/moment@2.24.0"></script>
+	<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-moment@0.1.1"></script>
 	<script src="../../utils.js"></script>
 	<style>
-    canvas {
-        -moz-user-select: none;
-        -webkit-user-select: none;
-        -ms-user-select: none;
-    }
+		canvas {
+			-moz-user-select: none;
+			-webkit-user-select: none;
+			-ms-user-select: none;
+		}
 	</style>
 </head>
 
@@ -37,10 +38,6 @@
 			return moment().add(days, 'd').format(timeFormat);
 		}
 
-		function newTimestamp(days) {
-			return moment().add(days, 'd').unix();
-		}
-
 		var color = Chart.helpers.color;
 		var config = {
 			type: 'line',
@@ -55,7 +52,7 @@
 					newDate(6)
 				],
 				datasets: [{
-					label: "My First dataset",
+					label: 'My First dataset',
 					backgroundColor: color(window.chartColors.red).alpha(0.5).rgbString(),
 					borderColor: window.chartColors.red,
 					fill: false,
@@ -69,7 +66,7 @@
 						randomScalingFactor()
 					],
 				}, {
-					label: "My Second dataset",
+					label: 'My Second dataset',
 					backgroundColor: color(window.chartColors.blue).alpha(0.5).rgbString(),
 					borderColor: window.chartColors.blue,
 					fill: false,
@@ -83,7 +80,7 @@
 						randomScalingFactor()
 					],
 				}, {
-					label: "Dataset with point data",
+					label: 'Dataset with point data',
 					backgroundColor: color(window.chartColors.green).alpha(0.5).rgbString(),
 					borderColor: window.chartColors.green,
 					fill: false,
@@ -103,14 +100,14 @@
 				}]
 			},
 			options: {
-                title:{
-                    text: "Chart.js Time Scale"
-                },
+				title: {
+					text: 'Chart.js Time Scale'
+				},
 				scales: {
-					xAxes: [{
-						type: "time",
+					x: {
+						type: 'time',
 						time: {
-							format: timeFormat,
+							parser: timeFormat,
 							// round: 'day'
 							tooltipFormat: 'll HH:mm'
 						},
@@ -118,19 +115,19 @@
 							display: true,
 							labelString: 'Date'
 						}
-					}, ],
-					yAxes: [{
+					},
+					y: {
 						scaleLabel: {
 							display: true,
 							labelString: 'value'
 						}
-					}]
+					}
 				},
 			}
 		};
 
 		window.onload = function() {
-			var ctx = document.getElementById("canvas").getContext("2d");
+			var ctx = document.getElementById('canvas').getContext('2d');
 			window.myLine = new Chart(ctx, config);
 
 		};
@@ -152,7 +149,7 @@
 		var colorNames = Object.keys(window.chartColors);
 		document.getElementById('addDataset').addEventListener('click', function() {
 			var colorName = colorNames[config.data.datasets.length % colorNames.length];
-			var newColor = window.chartColors[colorName]
+			var newColor = window.chartColors[colorName];
 			var newDataset = {
 				label: 'Dataset ' + config.data.datasets.length,
 				borderColor: newColor,
@@ -173,7 +170,7 @@
 				config.data.labels.push(newDate(config.data.labels.length));
 
 				for (var index = 0; index < config.data.datasets.length; ++index) {
-					if (typeof config.data.datasets[index].data[0] === "object") {
+					if (typeof config.data.datasets[index].data[0] === 'object') {
 						config.data.datasets[index].data.push({
 							x: newDate(config.data.datasets[index].data.length),
 							y: randomScalingFactor(),
@@ -195,7 +192,7 @@
 		document.getElementById('removeData').addEventListener('click', function() {
 			config.data.labels.splice(-1, 1); // remove the label first
 
-			config.data.datasets.forEach(function(dataset, datasetIndex) {
+			config.data.datasets.forEach(function(dataset) {
 				dataset.data.pop();
 			});
 

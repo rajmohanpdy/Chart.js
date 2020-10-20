@@ -1,65 +1,51 @@
+function getLabels(scale) {
+	return scale.ticks.map(t => t.label);
+}
+
 // Tests for the radial linear scale used by the polar area and radar charts
 describe('Test the radial linear scale', function() {
-	it('Should register the constructor with the scale service', function() {
-		var Constructor = Chart.scaleService.getScaleConstructor('radialLinear');
+	describe('auto', jasmine.fixture.specs('scale.radialLinear'));
+
+	it('Should register the constructor with the registry', function() {
+		var Constructor = Chart.registry.getScale('radialLinear');
 		expect(Constructor).not.toBe(undefined);
 		expect(typeof Constructor).toBe('function');
 	});
 
 	it('Should have the correct default config', function() {
-		var defaultConfig = Chart.scaleService.getScaleDefaults('radialLinear');
+		var defaultConfig = Chart.defaults.scales.radialLinear;
 		expect(defaultConfig).toEqual({
+			display: true,
+			animate: true,
+			position: 'chartArea',
+
 			angleLines: {
 				display: true,
-				color: 'rgba(0, 0, 0, 0.1)',
-				lineWidth: 1
-			},
-			animate: true,
-			display: true,
-			gridLines: {
-				circular: false,
-				color: 'rgba(0, 0, 0, 0.1)',
-				drawBorder: true,
-				drawOnChartArea: true,
-				drawTicks: true,
-				tickMarkLength: 10,
+				color: 'rgba(0,0,0,0.1)',
 				lineWidth: 1,
-				offsetGridLines: false,
-				display: true,
-				zeroLineColor: 'rgba(0,0,0,0.25)',
-				zeroLineWidth: 1,
-				zeroLineBorderDash: [],
-				zeroLineBorderDashOffset: 0.0,
 				borderDash: [],
 				borderDashOffset: 0.0
 			},
-			pointLabels: {
-				display: true,
-				fontSize: 10,
-				callback: defaultConfig.pointLabels.callback, // make this nicer, then check explicitly below
+
+			gridLines: {
+				circular: false
 			},
-			position: 'chartArea',
-			offset: false,
-			scaleLabel: Chart.defaults.scale.scaleLabel,
+
 			ticks: {
+				showLabelBackdrop: true,
 				backdropColor: 'rgba(255,255,255,0.75)',
 				backdropPaddingY: 2,
 				backdropPaddingX: 2,
-				beginAtZero: false,
-				minRotation: 0,
-				maxRotation: 50,
-				mirror: false,
-				padding: 0,
-				reverse: false,
-				showLabelBackdrop: true,
-				display: true,
-				callback: defaultConfig.ticks.callback, // make this nicer, then check explicitly below
-				autoSkip: true,
-				autoSkipPadding: 0,
-				labelOffset: 0,
-				minor: {},
-				major: {},
+				callback: defaultConfig.ticks.callback
 			},
+
+			pointLabels: {
+				display: true,
+				font: {
+					size: 10
+				},
+				callback: defaultConfig.pointLabels.callback
+			}
 		});
 
 		// Is this actually a function
@@ -83,8 +69,8 @@ describe('Test the radial linear scale', function() {
 			}
 		});
 
-		expect(chart.scale.min).toBe(-100);
-		expect(chart.scale.max).toBe(150);
+		expect(chart.scales.r.min).toBe(-100);
+		expect(chart.scales.r.max).toBe(150);
 	});
 
 	it('Should correctly determine the max & min of string data values', function() {
@@ -103,8 +89,8 @@ describe('Test the radial linear scale', function() {
 			}
 		});
 
-		expect(chart.scale.min).toBe(-100);
-		expect(chart.scale.max).toBe(150);
+		expect(chart.scales.r.min).toBe(-100);
+		expect(chart.scales.r.max).toBe(150);
 	});
 
 	it('Should correctly determine the max & min data values when there are hidden datasets', function() {
@@ -126,8 +112,8 @@ describe('Test the radial linear scale', function() {
 			}
 		});
 
-		expect(chart.scale.min).toBe(-100);
-		expect(chart.scale.max).toBe(150);
+		expect(chart.scales.r.min).toBe(-100);
+		expect(chart.scales.r.max).toBe(150);
 	});
 
 	it('Should correctly determine the max & min data values when there is NaN data', function() {
@@ -144,30 +130,26 @@ describe('Test the radial linear scale', function() {
 			}
 		});
 
-		expect(chart.scale.min).toBe(50);
-		expect(chart.scale.max).toBe(70);
+		expect(chart.scales.r.min).toBe(50);
+		expect(chart.scales.r.max).toBe(70);
 	});
 
 	it('Should ensure that the scale has a max and min that are not equal', function() {
-		var scaleID = 'myScale';
-
-		var mockData = {
-			datasets: [],
-			labels: []
-		};
-
-		var mockContext = window.createMockContext();
-		var Constructor = Chart.scaleService.getScaleConstructor('radialLinear');
-		var scale = new Constructor({
-			ctx: mockContext,
-			options: Chart.scaleService.getScaleDefaults('radialLinear'), // use default config for scale
-			chart: {
-				data: mockData
+		var chart = window.acquireChart({
+			type: 'radar',
+			data: {
+				datasets: [],
+				labels: []
 			},
-			id: scaleID,
+			options: {
+				scales: {
+					rScale: {}
+				}
+			}
 		});
 
-		scale.update(200, 300);
+		var scale = chart.scales.rScale;
+
 		expect(scale.min).toBe(-1);
 		expect(scale.max).toBe(1);
 	});
@@ -183,16 +165,14 @@ describe('Test the radial linear scale', function() {
 			},
 			options: {
 				scale: {
-					ticks: {
-						suggestedMin: -10,
-						suggestedMax: 10
-					}
+					suggestedMin: -10,
+					suggestedMax: 10
 				}
 			}
 		});
 
-		expect(chart.scale.min).toBe(-10);
-		expect(chart.scale.max).toBe(10);
+		expect(chart.scales.r.min).toBe(-10);
+		expect(chart.scales.r.max).toBe(10);
 	});
 
 	it('Should use the min and max options', function() {
@@ -206,17 +186,15 @@ describe('Test the radial linear scale', function() {
 			},
 			options: {
 				scale: {
-					ticks: {
-						min: -1010,
-						max: 1010
-					}
+					min: -1010,
+					max: 1010
 				}
 			}
 		});
 
-		expect(chart.scale.min).toBe(-1010);
-		expect(chart.scale.max).toBe(1010);
-		expect(chart.scale.ticks).toEqual(['-1010', '-1000', '-500', '0', '500', '1000', '1010']);
+		expect(chart.scales.r.min).toBe(-1010);
+		expect(chart.scales.r.max).toBe(1010);
+		expect(getLabels(chart.scales.r)).toEqual(['-1,010', '-1,000', '-500', '0', '500', '1,000', '1,010']);
 	});
 
 	it('should forcibly include 0 in the range if the beginAtZero option is used', function() {
@@ -230,29 +208,27 @@ describe('Test the radial linear scale', function() {
 			},
 			options: {
 				scale: {
-					ticks: {
-						beginAtZero: false
-					}
+					beginAtZero: false
 				}
 			}
 		});
 
-		expect(chart.scale.ticks).toEqual(['20', '25', '30', '35', '40', '45', '50']);
+		expect(getLabels(chart.scales.r)).toEqual(['20', '25', '30', '35', '40', '45', '50']);
 
-		chart.scale.options.ticks.beginAtZero = true;
+		chart.scales.r.options.beginAtZero = true;
 		chart.update();
 
-		expect(chart.scale.ticks).toEqual(['0', '5', '10', '15', '20', '25', '30', '35', '40', '45', '50']);
+		expect(getLabels(chart.scales.r)).toEqual(['0', '5', '10', '15', '20', '25', '30', '35', '40', '45', '50']);
 
 		chart.data.datasets[0].data = [-20, -30, -40, -50];
 		chart.update();
 
-		expect(chart.scale.ticks).toEqual(['-50', '-45', '-40', '-35', '-30', '-25', '-20', '-15', '-10', '-5', '0']);
+		expect(getLabels(chart.scales.r)).toEqual(['-50', '-45', '-40', '-35', '-30', '-25', '-20', '-15', '-10', '-5', '0']);
 
-		chart.scale.options.ticks.beginAtZero = false;
+		chart.scales.r.options.beginAtZero = false;
 		chart.update();
 
-		expect(chart.scale.ticks).toEqual(['-50', '-45', '-40', '-35', '-30', '-25', '-20']);
+		expect(getLabels(chart.scales.r)).toEqual(['-50', '-45', '-40', '-35', '-30', '-25', '-20']);
 	});
 
 	it('Should generate tick marks in the correct order in reversed mode', function() {
@@ -266,16 +242,51 @@ describe('Test the radial linear scale', function() {
 			},
 			options: {
 				scale: {
-					ticks: {
-						reverse: true
+					reverse: true
+				}
+			}
+		});
+
+		expect(getLabels(chart.scales.r)).toEqual(['80', '70', '60', '50', '40', '30', '20', '10', '0']);
+		expect(chart.scales.r.start).toBe(80);
+		expect(chart.scales.r.end).toBe(0);
+	});
+
+	it('Should correctly limit the maximum number of ticks', function() {
+		var chart = window.acquireChart({
+			type: 'radar',
+			data: {
+				labels: ['label1', 'label2', 'label3'],
+				datasets: [{
+					data: [0.5, 1.5, 2.5]
+				}]
+			},
+			options: {
+				scale: {
+					pointLabels: {
+						display: false
 					}
 				}
 			}
 		});
 
-		expect(chart.scale.ticks).toEqual(['80', '70', '60', '50', '40', '30', '20', '10', '0']);
-		expect(chart.scale.start).toBe(80);
-		expect(chart.scale.end).toBe(0);
+		expect(getLabels(chart.scales.r)).toEqual(['0.5', '1.0', '1.5', '2.0', '2.5']);
+
+		chart.options.scales.r.ticks.maxTicksLimit = 11;
+		chart.update();
+
+		expect(getLabels(chart.scales.r)).toEqual(['0.5', '1.0', '1.5', '2.0', '2.5']);
+
+		chart.options.scales.r.ticks.stepSize = 0.01;
+		chart.update();
+
+		expect(getLabels(chart.scales.r)).toEqual(['0.5', '1.0', '1.5', '2.0', '2.5']);
+
+		chart.options.scales.r.min = 0.3;
+		chart.options.scales.r.max = 2.8;
+		chart.update();
+
+		expect(getLabels(chart.scales.r)).toEqual(['0.3', '0.8', '1.3', '1.8', '2.3', '2.8']);
 	});
 
 	it('Should build labels using the user supplied callback', function() {
@@ -298,8 +309,8 @@ describe('Test the radial linear scale', function() {
 			}
 		});
 
-		expect(chart.scale.ticks).toEqual(['0', '1', '2', '3', '4', '5', '6', '7', '8']);
-		expect(chart.scale.pointLabels).toEqual(['label1', 'label2', 'label3', 'label4', 'label5']);
+		expect(getLabels(chart.scales.r)).toEqual(['0', '1', '2', '3', '4', '5', '6', '7', '8']);
+		expect(chart.scales.r.pointLabels).toEqual(['label1', 'label2', 'label3', 'label4', 'label5']);
 	});
 
 	it('Should build point labels using the user supplied callback', function() {
@@ -322,7 +333,21 @@ describe('Test the radial linear scale', function() {
 			}
 		});
 
-		expect(chart.scale.pointLabels).toEqual(['0', '1', '2', '3', '4']);
+		expect(chart.scales.r.pointLabels).toEqual(['0', '1', '2', '3', '4']);
+	});
+
+	it('Should build point labels from falsy values', function() {
+		var chart = window.acquireChart({
+			type: 'radar',
+			data: {
+				datasets: [{
+					data: [10, 5, 0, 25, 78, 20]
+				}],
+				labels: [0, '', undefined, null, NaN, false]
+			}
+		});
+
+		expect(chart.scales.r.pointLabels).toEqual([0, '', '', '', '', '']);
 	});
 
 	it('should correctly set the center point', function() {
@@ -345,9 +370,9 @@ describe('Test the radial linear scale', function() {
 			}
 		});
 
-		expect(chart.scale.drawingArea).toBe(233);
-		expect(chart.scale.xCenter).toBe(256);
-		expect(chart.scale.yCenter).toBe(280);
+		expect(chart.scales.r.drawingArea).toBe(227);
+		expect(chart.scales.r.xCenter).toBe(256);
+		expect(chart.scales.r.yCenter).toBe(284);
 	});
 
 	it('should correctly get the label for a given data index', function() {
@@ -369,7 +394,7 @@ describe('Test the radial linear scale', function() {
 				}
 			}
 		});
-		expect(chart.scale.getLabelForIndex(1, 0)).toBe(5);
+		expect(chart.scales.r.getLabelForValue(5)).toBe('5');
 	});
 
 	it('should get the correct distance from the center point', function() {
@@ -392,18 +417,51 @@ describe('Test the radial linear scale', function() {
 			}
 		});
 
-		expect(chart.scale.getDistanceFromCenterForValue(chart.scale.min)).toBe(0);
-		expect(chart.scale.getDistanceFromCenterForValue(chart.scale.max)).toBe(233);
-		expect(chart.scale.getPointPositionForValue(1, 5)).toEqual({
-			x: 270,
-			y: 275,
-		});
+		expect(chart.scales.r.getDistanceFromCenterForValue(chart.scales.r.min)).toBe(0);
+		expect(chart.scales.r.getDistanceFromCenterForValue(chart.scales.r.max)).toBe(227);
 
-		chart.scale.options.ticks.reverse = true;
+		var position = chart.scales.r.getPointPositionForValue(1, 5);
+		expect(position.x).toBeCloseToPixel(270);
+		expect(position.y).toBeCloseToPixel(278);
+
+		chart.scales.r.options.reverse = true;
 		chart.update();
 
-		expect(chart.scale.getDistanceFromCenterForValue(chart.scale.min)).toBe(233);
-		expect(chart.scale.getDistanceFromCenterForValue(chart.scale.max)).toBe(0);
+		expect(chart.scales.r.getDistanceFromCenterForValue(chart.scales.r.min)).toBe(227);
+		expect(chart.scales.r.getDistanceFromCenterForValue(chart.scales.r.max)).toBe(0);
+	});
+
+	it('should get the correct value for a distance from the center point', function() {
+		var chart = window.acquireChart({
+			type: 'radar',
+			data: {
+				datasets: [{
+					data: [10, 5, 0, 25, 78]
+				}],
+				labels: ['label1', 'label2', 'label3', 'label4', 'label5']
+			},
+			options: {
+				scale: {
+					pointLabels: {
+						callback: function(value, index) {
+							return index.toString();
+						}
+					}
+				}
+			}
+		});
+
+		expect(chart.scales.r.getValueForDistanceFromCenter(0)).toBe(chart.scales.r.min);
+		expect(chart.scales.r.getValueForDistanceFromCenter(227)).toBe(chart.scales.r.max);
+
+		var dist = chart.scales.r.getDistanceFromCenterForValue(5);
+		expect(chart.scales.r.getValueForDistanceFromCenter(dist)).toBe(5);
+
+		chart.scales.r.options.reverse = true;
+		chart.update();
+
+		expect(chart.scales.r.getValueForDistanceFromCenter(0)).toBe(chart.scales.r.max);
+		expect(chart.scales.r.getValueForDistanceFromCenter(227)).toBe(chart.scales.r.min);
 	});
 
 	it('should correctly get angles for all points', function() {
@@ -434,14 +492,72 @@ describe('Test the radial linear scale', function() {
 		var slice = 72; // (360 / 5)
 
 		for (var i = 0; i < 5; i++) {
-			expect(radToNearestDegree(chart.scale.getIndexAngle(i))).toBe(15 + (slice * i));
+			expect(radToNearestDegree(chart.scales.r.getIndexAngle(i))).toBe(15 + (slice * i));
 		}
 
 		chart.options.startAngle = 0;
 		chart.update();
 
 		for (var x = 0; x < 5; x++) {
-			expect(radToNearestDegree(chart.scale.getIndexAngle(x))).toBe((slice * x));
+			expect(radToNearestDegree(chart.scales.r.getIndexAngle(x))).toBe((slice * x));
 		}
+	});
+
+	it('should correctly get the correct label alignment for all points', function() {
+		var chart = window.acquireChart({
+			type: 'radar',
+			data: {
+				datasets: [{
+					data: [10, 5, 0, 25, 78]
+				}],
+				labels: ['label1', 'label2', 'label3', 'label4', 'label5']
+			},
+			options: {
+				scale: {
+					pointLabels: {
+						callback: function(value, index) {
+							return index.toString();
+						}
+					},
+					ticks: {
+						display: false
+					}
+				}
+			}
+		});
+
+		var scale = chart.scales.r;
+
+		[{
+			startAngle: 30,
+			textAlign: ['right', 'right', 'left', 'left', 'left'],
+			y: [82, 366, 506, 319, 53]
+		}, {
+			startAngle: -30,
+			textAlign: ['right', 'right', 'left', 'left', 'right'],
+			y: [319, 506, 366, 82, 53]
+		}, {
+			startAngle: 750,
+			textAlign: ['right', 'right', 'left', 'left', 'left'],
+			y: [82, 366, 506, 319, 53]
+		}].forEach(function(expected) {
+			chart.options.startAngle = expected.startAngle;
+			chart.update();
+
+			scale.ctx = window.createMockContext();
+			chart.draw();
+
+			scale.ctx.getCalls().filter(function(x) {
+				return x.name === 'setTextAlign';
+			}).forEach(function(x, i) {
+				expect(x.args[0]).withContext('startAngle: ' + expected.startAngle + ', tick: ' + i).toBe(expected.textAlign[i]);
+			});
+
+			scale.ctx.getCalls().filter(function(x) {
+				return x.name === 'fillText';
+			}).map(function(x, i) {
+				expect(x.args[2]).toBeCloseToPixel(expected.y[i]);
+			});
+		});
 	});
 });

@@ -21,6 +21,15 @@ describe('Chart.helpers.core', function() {
 			expect(helpers.isArray([42])).toBeTruthy();
 			expect(helpers.isArray(new Array())).toBeTruthy();
 			expect(helpers.isArray(Array.prototype)).toBeTruthy();
+			expect(helpers.isArray(new Int8Array(2))).toBeTruthy();
+			expect(helpers.isArray(new Uint8Array())).toBeTruthy();
+			expect(helpers.isArray(new Uint8ClampedArray([128, 244]))).toBeTruthy();
+			expect(helpers.isArray(new Int16Array())).toBeTruthy();
+			expect(helpers.isArray(new Uint16Array())).toBeTruthy();
+			expect(helpers.isArray(new Int32Array())).toBeTruthy();
+			expect(helpers.isArray(new Uint32Array())).toBeTruthy();
+			expect(helpers.isArray(new Float32Array([1.2]))).toBeTruthy();
+			expect(helpers.isArray(new Float64Array([]))).toBeTruthy();
 		});
 		it('should return false if value is not an array', function() {
 			expect(helpers.isArray()).toBeFalsy();
@@ -53,6 +62,24 @@ describe('Chart.helpers.core', function() {
 			expect(helpers.isObject([42])).toBeFalsy();
 			expect(helpers.isObject(new Array())).toBeFalsy();
 			expect(helpers.isObject(new Date())).toBeFalsy();
+		});
+	});
+
+	describe('isFinite', function() {
+		it('should return true if value is a finite number', function() {
+			expect(helpers.isFinite(0)).toBeTruthy();
+			// eslint-disable-next-line no-new-wrappers
+			expect(helpers.isFinite(new Number(10))).toBeTruthy();
+		});
+
+		it('should return false if the value is infinite', function() {
+			expect(helpers.isFinite(Number.POSITIVE_INFINITY)).toBeFalsy();
+			expect(helpers.isFinite(Number.NEGATIVE_INFINITY)).toBeFalsy();
+		});
+
+		it('should return false if the value is not a number', function() {
+			expect(helpers.isFinite('a')).toBeFalsy();
+			expect(helpers.isFinite({})).toBeFalsy();
 		});
 	});
 
@@ -89,27 +116,6 @@ describe('Chart.helpers.core', function() {
 		it('should return default if undefined', function() {
 			expect(helpers.valueOrDefault(undefined, 42)).toBe(42);
 			expect(helpers.valueOrDefault({}.foo, 42)).toBe(42);
-		});
-	});
-
-	describe('valueAtIndexOrDefault', function() {
-		it('should return the passed value if not an array', function() {
-			expect(helpers.valueAtIndexOrDefault(0, 0, 42)).toBe(0);
-			expect(helpers.valueAtIndexOrDefault('', 0, 42)).toBe('');
-			expect(helpers.valueAtIndexOrDefault(null, 0, 42)).toBe(null);
-			expect(helpers.valueAtIndexOrDefault(false, 0, 42)).toBe(false);
-			expect(helpers.valueAtIndexOrDefault(98, 0, 42)).toBe(98);
-		});
-		it('should return the value at index if defined', function() {
-			expect(helpers.valueAtIndexOrDefault([1, false, 'foo'], 1, 42)).toBe(false);
-			expect(helpers.valueAtIndexOrDefault([1, false, 'foo'], 2, 42)).toBe('foo');
-		});
-		it('should return the default value if the passed value is undefined', function() {
-			expect(helpers.valueAtIndexOrDefault(undefined, 0, 42)).toBe(42);
-		});
-		it('should return the default value if value at index is undefined', function() {
-			expect(helpers.valueAtIndexOrDefault([1, false, 'foo'], 3, 42)).toBe(42);
-			expect(helpers.valueAtIndexOrDefault([1, undefined, 'foo'], 1, 42)).toBe(42);
 		});
 	});
 
@@ -214,26 +220,15 @@ describe('Chart.helpers.core', function() {
 		});
 	});
 
-	describe('arrayEquals', function() {
-		it('should return false if arrays are not the same', function() {
-			expect(helpers.arrayEquals([], [42])).toBeFalsy();
-			expect(helpers.arrayEquals([42], ['42'])).toBeFalsy();
-			expect(helpers.arrayEquals([1, 2, 3], [1, 2, 3, 4])).toBeFalsy();
-			expect(helpers.arrayEquals(['foo', 'bar'], ['bar', 'foo'])).toBeFalsy();
-			expect(helpers.arrayEquals([1, 2, 3], [1, 2, 'foo'])).toBeFalsy();
-			expect(helpers.arrayEquals([1, 2, [3, 4]], [1, 2, [3, 'foo']])).toBeFalsy();
-			expect(helpers.arrayEquals([{a: 42}], [{a: 42}])).toBeFalsy();
+	describe('_elementsEqual', function() {
+		it('should return true if arrays are the same', function() {
+			expect(helpers._elementsEqual(
+				[{datasetIndex: 0, index: 1}, {datasetIndex: 0, index: 2}],
+				[{datasetIndex: 0, index: 1}, {datasetIndex: 0, index: 2}])).toBeTruthy();
 		});
 		it('should return false if arrays are not the same', function() {
-			var o0 = {};
-			var o1 = {};
-			var o2 = {};
-
-			expect(helpers.arrayEquals([], [])).toBeTruthy();
-			expect(helpers.arrayEquals([1, 2, 3], [1, 2, 3])).toBeTruthy();
-			expect(helpers.arrayEquals(['foo', 'bar'], ['foo', 'bar'])).toBeTruthy();
-			expect(helpers.arrayEquals([true, false, true], [true, false, true])).toBeTruthy();
-			expect(helpers.arrayEquals([o0, o1, o2], [o0, o1, o2])).toBeTruthy();
+			expect(helpers._elementsEqual([], [{datasetIndex: 0, index: 1}])).toBeFalsy();
+			expect(helpers._elementsEqual([{datasetIndex: 0, index: 2}], [{datasetIndex: 0, index: 1}])).toBeFalsy();
 		});
 	});
 
@@ -277,6 +272,11 @@ describe('Chart.helpers.core', function() {
 	});
 
 	describe('merge', function() {
+		it('should not allow prototype pollution', function() {
+			var test = helpers.merge({}, JSON.parse('{"__proto__":{"polluted": true}}'));
+			expect(test.prototype).toBeUndefined();
+			expect(Object.prototype.polluted).toBeUndefined();
+		});
 		it('should update target and return it', function() {
 			var target = {a: 1};
 			var result = helpers.merge(target, {a: 2, b: 'foo'});
@@ -324,6 +324,11 @@ describe('Chart.helpers.core', function() {
 	});
 
 	describe('mergeIf', function() {
+		it('should not allow prototype pollution', function() {
+			var test = helpers.mergeIf({}, JSON.parse('{"__proto__":{"polluted": true}}'));
+			expect(test.prototype).toBeUndefined();
+			expect(Object.prototype.polluted).toBeUndefined();
+		});
 		it('should update target and return it', function() {
 			var target = {a: 1};
 			var result = helpers.mergeIf(target, {a: 2, b: 'foo'});

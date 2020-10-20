@@ -1,180 +1,176 @@
-'use strict';
+import DatasetController from '../core/core.datasetController';
+import {resolve} from '../helpers/helpers.options';
+import {resolveObjectKey} from '../helpers/helpers.core';
 
-var defaults = require('../core/core.defaults');
-var elements = require('../elements/index');
-var helpers = require('../helpers/index');
+export default class BubbleController extends DatasetController {
+	initialize() {
+		this.enableOptionSharing = true;
+		super.initialize();
+	}
 
-defaults._set('bubble', {
-	hover: {
-		mode: 'single'
+	/**
+	 * Parse array of objects
+	 * @protected
+	 */
+	parseObjectData(meta, data, start, count) {
+		const {xScale, yScale} = meta;
+		const {xAxisKey = 'x', yAxisKey = 'y'} = this._parsing;
+		const parsed = [];
+		let i, ilen, item;
+		for (i = start, ilen = start + count; i < ilen; ++i) {
+			item = data[i];
+			parsed.push({
+				x: xScale.parse(resolveObjectKey(item, xAxisKey), i),
+				y: yScale.parse(resolveObjectKey(item, yAxisKey), i),
+				_custom: item && item.r && +item.r
+			});
+		}
+		return parsed;
+	}
+
+	/**
+	 * @protected
+	 */
+	getMaxOverflow() {
+		const me = this;
+		const meta = me._cachedMeta;
+		let i = (meta.data || []).length - 1;
+		let max = 0;
+		for (; i >= 0; --i) {
+			max = Math.max(max, me.getStyle(i, true).radius);
+		}
+		return max > 0 && max;
+	}
+
+	/**
+	 * @protected
+	 */
+	getLabelAndValue(index) {
+		const me = this;
+		const meta = me._cachedMeta;
+		const {xScale, yScale} = meta;
+		const parsed = me.getParsed(index);
+		const x = xScale.getLabelForValue(parsed.x);
+		const y = yScale.getLabelForValue(parsed.y);
+		const r = parsed._custom;
+
+		return {
+			label: meta.label,
+			value: '(' + x + ', ' + y + (r ? ', ' + r : '') + ')'
+		};
+	}
+
+	update(mode) {
+		const me = this;
+		const points = me._cachedMeta.data;
+
+		// Update Points
+		me.updateElements(points, 0, points.length, mode);
+	}
+
+	updateElements(points, start, count, mode) {
+		const me = this;
+		const reset = mode === 'reset';
+		const {xScale, yScale} = me._cachedMeta;
+		const firstOpts = me.resolveDataElementOptions(start, mode);
+		const sharedOptions = me.getSharedOptions(firstOpts);
+		const includeOptions = me.includeOptions(mode, sharedOptions);
+
+		for (let i = start; i < start + count; i++) {
+			const point = points[i];
+			const parsed = !reset && me.getParsed(i);
+			const x = reset ? xScale.getPixelForDecimal(0.5) : xScale.getPixelForValue(parsed.x);
+			const y = reset ? yScale.getBasePixel() : yScale.getPixelForValue(parsed.y);
+			const properties = {
+				x,
+				y,
+				skip: isNaN(x) || isNaN(y)
+			};
+
+			if (includeOptions) {
+				properties.options = me.resolveDataElementOptions(i, mode);
+
+				if (reset) {
+					properties.options.radius = 0;
+				}
+			}
+
+			me.updateElement(point, i, properties, mode);
+		}
+
+		me.updateSharedOptions(sharedOptions, mode, firstOpts);
+	}
+
+	/**
+	 * @param {number} index
+	 * @param {string} [mode]
+	 * @protected
+	 */
+	resolveDataElementOptions(index, mode) {
+		const me = this;
+		const chart = me.chart;
+		const parsed = me.getParsed(index);
+		let values = super.resolveDataElementOptions(index, mode);
+
+		// Scriptable options
+		const context = me.getContext(index, mode === 'active');
+
+		// In case values were cached (and thus frozen), we need to clone the values
+		if (values.$shared) {
+			values = Object.assign({}, values, {$shared: false});
+		}
+
+
+		// Custom radius resolution
+		if (mode !== 'active') {
+			values.radius = 0;
+		}
+		values.radius += resolve([
+			parsed && parsed._custom,
+			me._config.radius,
+			chart.options.elements.point.radius
+		], context, index);
+
+		return values;
+	}
+}
+
+BubbleController.id = 'bubble';
+
+/**
+ * @type {any}
+ */
+BubbleController.defaults = {
+	datasetElementType: false,
+	dataElementType: 'point',
+	dataElementOptions: [
+		'backgroundColor',
+		'borderColor',
+		'borderWidth',
+		'hitRadius',
+		'radius',
+		'pointStyle',
+		'rotation'
+	],
+	animation: {
+		numbers: {
+			properties: ['x', 'y', 'borderWidth', 'radius']
+		}
 	},
-
 	scales: {
-		xAxes: [{
-			type: 'linear', // bubble should probably use a linear scale by default
-			position: 'bottom',
-			id: 'x-axis-0' // need an ID so datasets can reference the scale
-		}],
-		yAxes: [{
-			type: 'linear',
-			position: 'left',
-			id: 'y-axis-0'
-		}]
+		x: {
+			type: 'linear'
+		},
+		y: {
+			type: 'linear'
+		}
 	},
-
 	tooltips: {
 		callbacks: {
-			title: function() {
+			title() {
 				// Title doesn't make sense for scatter since we format the data as a point
 				return '';
-			},
-			label: function(item, data) {
-				var datasetLabel = data.datasets[item.datasetIndex].label || '';
-				var dataPoint = data.datasets[item.datasetIndex].data[item.index];
-				return datasetLabel + ': (' + item.xLabel + ', ' + item.yLabel + ', ' + dataPoint.r + ')';
 			}
 		}
 	}
-});
-
-
-module.exports = function(Chart) {
-
-	Chart.controllers.bubble = Chart.DatasetController.extend({
-		/**
-		 * @protected
-		 */
-		dataElementType: elements.Point,
-
-		/**
-		 * @protected
-		 */
-		update: function(reset) {
-			var me = this;
-			var meta = me.getMeta();
-			var points = meta.data;
-
-			// Update Points
-			helpers.each(points, function(point, index) {
-				me.updateElement(point, index, reset);
-			});
-		},
-
-		/**
-		 * @protected
-		 */
-		updateElement: function(point, index, reset) {
-			var me = this;
-			var meta = me.getMeta();
-			var custom = point.custom || {};
-			var xScale = me.getScaleForId(meta.xAxisID);
-			var yScale = me.getScaleForId(meta.yAxisID);
-			var options = me._resolveElementOptions(point, index);
-			var data = me.getDataset().data[index];
-			var dsIndex = me.index;
-
-			var x = reset ? xScale.getPixelForDecimal(0.5) : xScale.getPixelForValue(typeof data === 'object' ? data : NaN, index, dsIndex);
-			var y = reset ? yScale.getBasePixel() : yScale.getPixelForValue(data, index, dsIndex);
-
-			point._xScale = xScale;
-			point._yScale = yScale;
-			point._options = options;
-			point._datasetIndex = dsIndex;
-			point._index = index;
-			point._model = {
-				backgroundColor: options.backgroundColor,
-				borderColor: options.borderColor,
-				borderWidth: options.borderWidth,
-				hitRadius: options.hitRadius,
-				pointStyle: options.pointStyle,
-				radius: reset ? 0 : options.radius,
-				skip: custom.skip || isNaN(x) || isNaN(y),
-				x: x,
-				y: y,
-			};
-
-			point.pivot();
-		},
-
-		/**
-		 * @protected
-		 */
-		setHoverStyle: function(point) {
-			var model = point._model;
-			var options = point._options;
-
-			model.backgroundColor = helpers.valueOrDefault(options.hoverBackgroundColor, helpers.getHoverColor(options.backgroundColor));
-			model.borderColor = helpers.valueOrDefault(options.hoverBorderColor, helpers.getHoverColor(options.borderColor));
-			model.borderWidth = helpers.valueOrDefault(options.hoverBorderWidth, options.borderWidth);
-			model.radius = options.radius + options.hoverRadius;
-		},
-
-		/**
-		 * @protected
-		 */
-		removeHoverStyle: function(point) {
-			var model = point._model;
-			var options = point._options;
-
-			model.backgroundColor = options.backgroundColor;
-			model.borderColor = options.borderColor;
-			model.borderWidth = options.borderWidth;
-			model.radius = options.radius;
-		},
-
-		/**
-		 * @private
-		 */
-		_resolveElementOptions: function(point, index) {
-			var me = this;
-			var chart = me.chart;
-			var datasets = chart.data.datasets;
-			var dataset = datasets[me.index];
-			var custom = point.custom || {};
-			var options = chart.options.elements.point;
-			var resolve = helpers.options.resolve;
-			var data = dataset.data[index];
-			var values = {};
-			var i, ilen, key;
-
-			// Scriptable options
-			var context = {
-				chart: chart,
-				dataIndex: index,
-				dataset: dataset,
-				datasetIndex: me.index
-			};
-
-			var keys = [
-				'backgroundColor',
-				'borderColor',
-				'borderWidth',
-				'hoverBackgroundColor',
-				'hoverBorderColor',
-				'hoverBorderWidth',
-				'hoverRadius',
-				'hitRadius',
-				'pointStyle'
-			];
-
-			for (i = 0, ilen = keys.length; i < ilen; ++i) {
-				key = keys[i];
-				values[key] = resolve([
-					custom[key],
-					dataset[key],
-					options[key]
-				], context, index);
-			}
-
-			// Custom radius resolution
-			values.radius = resolve([
-				custom.radius,
-				data ? data.r : undefined,
-				dataset.radius,
-				options.radius
-			], context, index);
-
-			return values;
-		}
-	});
 };

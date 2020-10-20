@@ -33,11 +33,11 @@ describe('Core.Interaction', function() {
 				type: 'click',
 				chart: chart,
 				native: true, // needed otherwise things its a DOM event
-				x: point._model.x,
-				y: point._model.y,
+				x: point.x,
+				y: point.y,
 			};
 
-			var elements = Chart.Interaction.modes.point(chart, evt);
+			var elements = Chart.Interaction.modes.point(chart, evt, {}).map(item => item.element);
 			expect(elements).toEqual([point, meta1.data[1]]);
 		});
 
@@ -51,7 +51,7 @@ describe('Core.Interaction', function() {
 				y: 0
 			};
 
-			var elements = Chart.Interaction.modes.point(chart, evt);
+			var elements = Chart.Interaction.modes.point(chart, evt, {}).map(item => item.element);
 			expect(elements).toEqual([]);
 		});
 	});
@@ -88,11 +88,11 @@ describe('Core.Interaction', function() {
 					type: 'click',
 					chart: chart,
 					native: true, // needed otherwise things its a DOM event
-					x: point._model.x,
-					y: point._model.y,
+					x: point.x,
+					y: point.y,
 				};
 
-				var elements = Chart.Interaction.modes.index(chart, evt, {intersect: true});
+				var elements = Chart.Interaction.modes.index(chart, evt, {intersect: true}).map(item => item.element);
 				expect(elements).toEqual([point, meta1.data[1]]);
 			});
 
@@ -106,7 +106,7 @@ describe('Core.Interaction', function() {
 					y: 0,
 				};
 
-				var elements = Chart.Interaction.modes.index(chart, evt, {intersect: true});
+				var elements = Chart.Interaction.modes.index(chart, evt, {intersect: true}).map(item => item.element);
 				expect(elements).toEqual([]);
 			});
 		});
@@ -143,18 +143,21 @@ describe('Core.Interaction', function() {
 					type: 'click',
 					chart: chart,
 					native: true, // needed otherwise things its a DOM event
-					x: 0,
-					y: 0
+					x: chart.chartArea.left,
+					y: chart.chartArea.top
 				};
 
-				var elements = Chart.Interaction.modes.index(chart, evt, {intersect: false});
+				var elements = Chart.Interaction.modes.index(chart, evt, {intersect: false}).map(item => item.element);
 				expect(elements).toEqual([meta0.data[0], meta1.data[0]]);
 			});
 
 			it ('axis: y gets correct items', function() {
 				var chart = window.acquireChart({
-					type: 'horizontalBar',
-					data: data
+					type: 'bar',
+					data: data,
+					options: {
+						indexAxis: 'y',
+					}
 				});
 
 				var meta0 = chart.getDatasetMeta(0);
@@ -169,7 +172,7 @@ describe('Core.Interaction', function() {
 					y: center.y + 30,
 				};
 
-				var elements = Chart.Interaction.modes.index(chart, evt, {axis: 'y', intersect: false});
+				var elements = Chart.Interaction.modes.index(chart, evt, {axis: 'y', intersect: false}).map(item => item.element);
 				expect(elements).toEqual([meta0.data[0], meta1.data[0]]);
 			});
 
@@ -182,11 +185,11 @@ describe('Core.Interaction', function() {
 					type: 'click',
 					chart: chart,
 					native: true, // needed otherwise things its a DOM event
-					x: 0,
-					y: 0
+					x: chart.chartArea.left,
+					y: chart.chartArea.top
 				};
 
-				var elements = Chart.Interaction.modes.index(chart, evt, {axis: 'xy', intersect: false});
+				var elements = Chart.Interaction.modes.index(chart, evt, {axis: 'xy', intersect: false}).map(item => item.element);
 				expect(elements).toEqual([meta0.data[0], meta1.data[0]]);
 			});
 		});
@@ -223,11 +226,11 @@ describe('Core.Interaction', function() {
 					type: 'click',
 					chart: chart,
 					native: true, // needed otherwise things its a DOM event
-					x: point._model.x,
-					y: point._model.y
+					x: point.x,
+					y: point.y
 				};
 
-				var elements = Chart.Interaction.modes.dataset(chart, evt, {intersect: true});
+				var elements = Chart.Interaction.modes.dataset(chart, evt, {intersect: true}).map(item => item.element);
 				expect(elements).toEqual(meta.data);
 			});
 
@@ -271,22 +274,23 @@ describe('Core.Interaction', function() {
 
 			it ('axis: x gets correct items', function() {
 				var chart = window.acquireChart({
-					type: 'horizontalBar',
-					data: data
+					type: 'bar',
+					data: data,
+					options: {
+						indexAxis: 'y',
+					}
 				});
 
 				var evt = {
 					type: 'click',
 					chart: chart,
 					native: true, // needed otherwise things its a DOM event
-					x: 0,
-					y: 0
+					x: chart.chartArea.left,
+					y: chart.chartArea.top
 				};
 
-				var elements = Chart.Interaction.modes.dataset(chart, evt, {axis: 'x', intersect: false});
-
-				var meta = chart.getDatasetMeta(0);
-				expect(elements).toEqual(meta.data);
+				var elements = Chart.Interaction.modes.dataset(chart, evt, {axis: 'x', intersect: false}).map(item => item.element);
+				expect(elements).toEqual(chart.getDatasetMeta(0).data);
 			});
 
 			it ('axis: y gets correct items', function() {
@@ -295,14 +299,12 @@ describe('Core.Interaction', function() {
 					type: 'click',
 					chart: chart,
 					native: true, // needed otherwise things its a DOM event
-					x: 0,
-					y: 0
+					x: chart.chartArea.left,
+					y: chart.chartArea.top
 				};
 
-				var elements = Chart.Interaction.modes.dataset(chart, evt, {axis: 'y', intersect: false});
-
-				var meta = chart.getDatasetMeta(1);
-				expect(elements).toEqual(meta.data);
+				var elements = Chart.Interaction.modes.dataset(chart, evt, {axis: 'y', intersect: false}).map(item => item.element);
+				expect(elements).toEqual(chart.getDatasetMeta(1).data);
 			});
 
 			it ('axis: xy gets correct items', function() {
@@ -311,14 +313,12 @@ describe('Core.Interaction', function() {
 					type: 'click',
 					chart: chart,
 					native: true, // needed otherwise things its a DOM event
-					x: 0,
-					y: 0
+					x: chart.chartArea.left,
+					y: chart.chartArea.top
 				};
 
-				var elements = Chart.Interaction.modes.dataset(chart, evt, {intersect: false});
-
-				var meta = chart.getDatasetMeta(1);
-				expect(elements).toEqual(meta.data);
+				var elements = Chart.Interaction.modes.dataset(chart, evt, {intersect: false}).map(item => item.element);
+				expect(elements).toEqual(chart.getDatasetMeta(1).data);
 			});
 		});
 	});
@@ -347,73 +347,145 @@ describe('Core.Interaction', function() {
 				});
 			});
 
-			it ('axis: xy should return the nearest item', function() {
-				var chart = this.chart;
-				var evt = {
-					type: 'click',
-					chart: chart,
-					native: true, // needed otherwise things its a DOM event
-					x: 0,
-					y: 0
-				};
+			describe('axis: xy', function() {
+				it ('should return the nearest item', function() {
+					var chart = this.chart;
+					var evt = {
+						type: 'click',
+						chart: chart,
+						native: true, // needed otherwise things its a DOM event
+						x: chart.chartArea.left,
+						y: chart.chartArea.top
+					};
 
-				// Nearest to 0,0 (top left) will be first point of dataset 2
-				var elements = Chart.Interaction.modes.nearest(chart, evt, {intersect: false});
-				var meta = chart.getDatasetMeta(1);
-				expect(elements).toEqual([meta.data[0]]);
+					// Nearest to 0,0 (top left) will be first point of dataset 2
+					var elements = Chart.Interaction.modes.nearest(chart, evt, {intersect: false}).map(item => item.element);
+					var meta = chart.getDatasetMeta(1);
+					expect(elements).toEqual([meta.data[0]]);
+				});
+
+				it ('should return all items at the same nearest distance', function() {
+					var chart = this.chart;
+					var meta0 = chart.getDatasetMeta(0);
+					var meta1 = chart.getDatasetMeta(1);
+
+					// Halfway between 2 mid points
+					var pt = {
+						x: meta0.data[1].x,
+						y: (meta0.data[1].y + meta1.data[1].y) / 2
+					};
+
+					var evt = {
+						type: 'click',
+						chart: chart,
+						native: true, // needed otherwise things its a DOM event
+						x: pt.x,
+						y: pt.y
+					};
+
+					// Both points are nearest
+					var elements = Chart.Interaction.modes.nearest(chart, evt, {intersect: false}).map(item => item.element);
+					expect(elements).toEqual([meta0.data[1], meta1.data[1]]);
+				});
 			});
 
-			it ('should return the smallest item if more than 1 are at the same distance', function() {
-				var chart = this.chart;
-				var meta0 = chart.getDatasetMeta(0);
-				var meta1 = chart.getDatasetMeta(1);
+			describe('axis: x', function() {
+				it ('should return all items at current x', function() {
+					var chart = this.chart;
+					var meta0 = chart.getDatasetMeta(0);
+					var meta1 = chart.getDatasetMeta(1);
 
-				// Halfway between 2 mid points
-				var pt = {
-					x: meta0.data[1]._view.x,
-					y: (meta0.data[1]._view.y + meta1.data[1]._view.y) / 2
-				};
+					// At 'Point 2', 10
+					var pt = {
+						x: meta0.data[1].x,
+						y: meta0.data[0].y
+					};
 
-				var evt = {
-					type: 'click',
-					chart: chart,
-					native: true, // needed otherwise things its a DOM event
-					x: pt.x,
-					y: pt.y
-				};
+					var evt = {
+						type: 'click',
+						chart: chart,
+						native: true, // needed otherwise things its a DOM event
+						x: pt.x,
+						y: pt.y
+					};
 
-				// Nearest to 0,0 (top left) will be first point of dataset 2
-				var elements = Chart.Interaction.modes.nearest(chart, evt, {intersect: false});
-				expect(elements).toEqual([meta0.data[1]]);
+					// Middle point from both series are nearest
+					var elements = Chart.Interaction.modes.nearest(chart, evt, {axis: 'x', intersect: false}).map(item => item.element);
+					expect(elements).toEqual([meta0.data[1], meta1.data[1]]);
+				});
+
+				it ('should return all items at nearest x-distance', function() {
+					var chart = this.chart;
+					var meta0 = chart.getDatasetMeta(0);
+					var meta1 = chart.getDatasetMeta(1);
+
+					// Haflway between 'Point 1' and 'Point 2', y=10
+					var pt = {
+						x: (meta0.data[0].x + meta0.data[1].x) / 2,
+						y: meta0.data[0].y
+					};
+
+					var evt = {
+						type: 'click',
+						chart: chart,
+						native: true, // needed otherwise things its a DOM event
+						x: pt.x,
+						y: pt.y
+					};
+
+					// Should return all (4) points from 'Point 1' and 'Point 2'
+					var elements = Chart.Interaction.modes.nearest(chart, evt, {axis: 'x', intersect: false}).map(item => item.element);
+					expect(elements).toEqual([meta0.data[0], meta0.data[1], meta1.data[0], meta1.data[1]]);
+				});
 			});
 
-			it ('should return the lowest dataset index if size and area are the same', function() {
-				var chart = this.chart;
-				// Make equal sized points at index: 1
-				chart.data.datasets[0].pointRadius[1] = 10;
-				chart.update();
+			describe('axis: y', function() {
+				it ('should return item with value 30', function() {
+					var chart = this.chart;
+					var meta0 = chart.getDatasetMeta(0);
 
-				// Trigger an event over top of the
-				var meta0 = chart.getDatasetMeta(0);
-				var meta1 = chart.getDatasetMeta(1);
+					// 'Point 1', y = 30
+					var pt = {
+						x: meta0.data[0].x,
+						y: meta0.data[2].y
+					};
 
-				// Halfway between 2 mid points
-				var pt = {
-					x: meta0.data[1]._view.x,
-					y: (meta0.data[1]._view.y + meta1.data[1]._view.y) / 2
-				};
+					var evt = {
+						type: 'click',
+						chart: chart,
+						native: true, // needed otherwise things its a DOM event
+						x: pt.x,
+						y: pt.y
+					};
 
-				var evt = {
-					type: 'click',
-					chart: chart,
-					native: true, // needed otherwise things its a DOM event
-					x: pt.x,
-					y: pt.y
-				};
+					// Middle point from both series are nearest
+					var elements = Chart.Interaction.modes.nearest(chart, evt, {axis: 'y', intersect: false}).map(item => item.element);
+					expect(elements).toEqual([meta0.data[2]]);
+				});
 
-				// Nearest to 0,0 (top left) will be first point of dataset 2
-				var elements = Chart.Interaction.modes.nearest(chart, evt, {intersect: false});
-				expect(elements).toEqual([meta0.data[1]]);
+				it ('should return all items at value 40', function() {
+					var chart = this.chart;
+					var meta0 = chart.getDatasetMeta(0);
+					var meta1 = chart.getDatasetMeta(1);
+
+					// 'Point 1', y = 40
+					var pt = {
+						x: meta0.data[0].x,
+						y: meta0.data[1].y
+					};
+
+					var evt = {
+						type: 'click',
+						chart: chart,
+						native: true, // needed otherwise things its a DOM event
+						x: pt.x,
+						y: pt.y
+					};
+
+					// Should return points with value 40
+					var elements = Chart.Interaction.modes.nearest(chart, evt, {axis: 'y', intersect: false}).map(item => item.element);
+					expect(elements).toEqual([meta0.data[1], meta1.data[0], meta1.data[1], meta1.data[2]]);
+				});
 			});
 		});
 
@@ -438,117 +510,94 @@ describe('Core.Interaction', function() {
 				});
 			});
 
-			it ('should return the nearest item', function() {
-				var chart = this.chart;
-				var meta = chart.getDatasetMeta(1);
-				var point = meta.data[1];
+			describe('axis=xy', function() {
+				it ('should return the nearest item', function() {
+					var chart = this.chart;
+					var meta = chart.getDatasetMeta(1);
+					var point = meta.data[1];
 
-				var evt = {
-					type: 'click',
-					chart: chart,
-					native: true, // needed otherwise things its a DOM event
-					x: point._view.x + 15,
-					y: point._view.y
-				};
+					var evt = {
+						type: 'click',
+						chart: chart,
+						native: true, // needed otherwise things its a DOM event
+						x: point.x + 15,
+						y: point.y
+					};
 
-				// Nothing intersects so find nothing
-				var elements = Chart.Interaction.modes.nearest(chart, evt, {intersect: true});
-				expect(elements).toEqual([]);
+					// Nothing intersects so find nothing
+					var elements = Chart.Interaction.modes.nearest(chart, evt, {intersect: true}).map(item => item.element);
+					expect(elements).toEqual([]);
 
-				evt = {
-					type: 'click',
-					chart: chart,
-					native: true,
-					x: point._view.x,
-					y: point._view.y
-				};
-				elements = Chart.Interaction.modes.nearest(chart, evt, {intersect: true});
-				expect(elements).toEqual([point]);
-			});
+					evt = {
+						type: 'click',
+						chart: chart,
+						native: true,
+						x: point.x,
+						y: point.y
+					};
+					elements = Chart.Interaction.modes.nearest(chart, evt, {intersect: true}).map(item => item.element);
+					expect(elements).toEqual([point]);
+				});
 
-			it ('should return the nearest item even if 2 intersect', function() {
-				var chart = this.chart;
-				chart.data.datasets[0].pointRadius = [5, 30, 5];
-				chart.data.datasets[0].data[1] = 39;
+				it ('should return the nearest item even if 2 intersect', function() {
+					var chart = this.chart;
+					chart.data.datasets[0].pointRadius = [5, 30, 5];
+					chart.data.datasets[0].data[1] = 39;
 
-				chart.data.datasets[1].pointRadius = [10, 10, 10];
+					chart.data.datasets[1].pointRadius = [10, 10, 10];
 
-				// Trigger an event over top of the
-				var meta0 = chart.getDatasetMeta(0);
+					chart.update();
 
-				// Halfway between 2 mid points
-				var pt = {
-					x: meta0.data[1]._view.x,
-					y: meta0.data[1]._view.y
-				};
+					// Trigger an event over top of the
+					var meta0 = chart.getDatasetMeta(0);
 
-				var evt = {
-					type: 'click',
-					chart: chart,
-					native: true, // needed otherwise things its a DOM event
-					x: pt.x,
-					y: pt.y
-				};
+					// Halfway between 2 mid points
+					var pt = {
+						x: meta0.data[1].x,
+						y: meta0.data[1].y
+					};
 
-				var elements = Chart.Interaction.modes.nearest(chart, evt, {intersect: true});
-				expect(elements).toEqual([meta0.data[1]]);
-			});
+					var evt = {
+						type: 'click',
+						chart: chart,
+						native: true, // needed otherwise things its a DOM event
+						x: pt.x,
+						y: pt.y
+					};
 
-			it ('should return the smallest item if more than 1 are at the same distance', function() {
-				var chart = this.chart;
-				chart.data.datasets[0].pointRadius = [5, 5, 5];
-				chart.data.datasets[0].data[1] = 40;
+					var elements = Chart.Interaction.modes.nearest(chart, evt, {intersect: true}).map(item => item.element);
+					expect(elements).toEqual([meta0.data[1]]);
+				});
 
-				chart.data.datasets[1].pointRadius = [10, 10, 10];
+				it ('should return the all items if more than 1 are at the same distance', function() {
+					var chart = this.chart;
+					chart.data.datasets[0].pointRadius = [5, 5, 5];
+					chart.data.datasets[0].data[1] = 40;
 
-				// Trigger an event over top of the
-				var meta0 = chart.getDatasetMeta(0);
+					chart.data.datasets[1].pointRadius = [10, 10, 10];
 
-				// Halfway between 2 mid points
-				var pt = {
-					x: meta0.data[1]._view.x,
-					y: meta0.data[1]._view.y
-				};
+					chart.update();
 
-				var evt = {
-					type: 'click',
-					chart: chart,
-					native: true, // needed otherwise things its a DOM event
-					x: pt.x,
-					y: pt.y
-				};
+					var meta0 = chart.getDatasetMeta(0);
+					var meta1 = chart.getDatasetMeta(1);
 
-				var elements = Chart.Interaction.modes.nearest(chart, evt, {intersect: true});
-				expect(elements).toEqual([meta0.data[1]]);
-			});
+					// Halfway between 2 mid points
+					var pt = {
+						x: meta0.data[1].x,
+						y: meta0.data[1].y
+					};
 
-			it ('should return the item at the lowest dataset index if distance and area are the same', function() {
-				var chart = this.chart;
-				chart.data.datasets[0].pointRadius = [5, 10, 5];
-				chart.data.datasets[0].data[1] = 40;
+					var evt = {
+						type: 'click',
+						chart: chart,
+						native: true, // needed otherwise things its a DOM event
+						x: pt.x,
+						y: pt.y
+					};
 
-				chart.data.datasets[1].pointRadius = [10, 10, 10];
-
-				// Trigger an event over top of the
-				var meta0 = chart.getDatasetMeta(0);
-
-				// Halfway between 2 mid points
-				var pt = {
-					x: meta0.data[1]._view.x,
-					y: meta0.data[1]._view.y
-				};
-
-				var evt = {
-					type: 'click',
-					chart: chart,
-					native: true, // needed otherwise things its a DOM event
-					x: pt.x,
-					y: pt.y
-				};
-
-				// Nearest to 0,0 (top left) will be first point of dataset 2
-				var elements = Chart.Interaction.modes.nearest(chart, evt, {intersect: true});
-				expect(elements).toEqual([meta0.data[1]]);
+					var elements = Chart.Interaction.modes.nearest(chart, evt, {intersect: true}).map(item => item.element);
+					expect(elements).toEqual([meta0.data[1], meta1.data[1]]);
+				});
 			});
 		});
 	});
@@ -583,8 +632,8 @@ describe('Core.Interaction', function() {
 
 			// Halfway between 2 mid points
 			var pt = {
-				x: meta0.data[1]._view.x,
-				y: meta0.data[1]._view.y
+				x: meta0.data[1].x,
+				y: meta0.data[1].y
 			};
 
 			var evt = {
@@ -595,7 +644,7 @@ describe('Core.Interaction', function() {
 				y: 0
 			};
 
-			var elements = Chart.Interaction.modes.x(chart, evt, {intersect: false});
+			var elements = Chart.Interaction.modes.x(chart, evt, {intersect: false}).map(item => item.element);
 			expect(elements).toEqual([meta0.data[1], meta1.data[1]]);
 
 			evt = {
@@ -606,7 +655,7 @@ describe('Core.Interaction', function() {
 				y: 0
 			};
 
-			elements = Chart.Interaction.modes.x(chart, evt, {intersect: false});
+			elements = Chart.Interaction.modes.x(chart, evt, {intersect: false}).map(item => item.element);
 			expect(elements).toEqual([]);
 		});
 
@@ -617,8 +666,8 @@ describe('Core.Interaction', function() {
 
 			// Halfway between 2 mid points
 			var pt = {
-				x: meta0.data[1]._view.x,
-				y: meta0.data[1]._view.y
+				x: meta0.data[1].x,
+				y: meta0.data[1].y
 			};
 
 			var evt = {
@@ -629,7 +678,7 @@ describe('Core.Interaction', function() {
 				y: 0
 			};
 
-			var elements = Chart.Interaction.modes.x(chart, evt, {intersect: true});
+			var elements = Chart.Interaction.modes.x(chart, evt, {intersect: true}).map(item => item.element);
 			expect(elements).toEqual([]); // we don't intersect anything
 
 			evt = {
@@ -640,7 +689,7 @@ describe('Core.Interaction', function() {
 				y: pt.y
 			};
 
-			elements = Chart.Interaction.modes.x(chart, evt, {intersect: true});
+			elements = Chart.Interaction.modes.x(chart, evt, {intersect: true}).map(item => item.element);
 			expect(elements).toEqual([meta0.data[1], meta1.data[1]]);
 		});
 	});
@@ -675,8 +724,8 @@ describe('Core.Interaction', function() {
 
 			// Halfway between 2 mid points
 			var pt = {
-				x: meta0.data[1]._view.x,
-				y: meta0.data[1]._view.y
+				x: meta0.data[1].x,
+				y: meta0.data[1].y
 			};
 
 			var evt = {
@@ -687,7 +736,7 @@ describe('Core.Interaction', function() {
 				y: pt.y,
 			};
 
-			var elements = Chart.Interaction.modes.y(chart, evt, {intersect: false});
+			var elements = Chart.Interaction.modes.y(chart, evt, {intersect: false}).map(item => item.element);
 			expect(elements).toEqual([meta0.data[1], meta1.data[0], meta1.data[1], meta1.data[2]]);
 
 			evt = {
@@ -698,7 +747,7 @@ describe('Core.Interaction', function() {
 				y: pt.y + 20, // out of range
 			};
 
-			elements = Chart.Interaction.modes.y(chart, evt, {intersect: false});
+			elements = Chart.Interaction.modes.y(chart, evt, {intersect: false}).map(item => item.element);
 			expect(elements).toEqual([]);
 		});
 
@@ -709,8 +758,8 @@ describe('Core.Interaction', function() {
 
 			// Halfway between 2 mid points
 			var pt = {
-				x: meta0.data[1]._view.x,
-				y: meta0.data[1]._view.y
+				x: meta0.data[1].x,
+				y: meta0.data[1].y
 			};
 
 			var evt = {
@@ -721,7 +770,7 @@ describe('Core.Interaction', function() {
 				y: pt.y
 			};
 
-			var elements = Chart.Interaction.modes.y(chart, evt, {intersect: true});
+			var elements = Chart.Interaction.modes.y(chart, evt, {intersect: true}).map(item => item.element);
 			expect(elements).toEqual([]); // we don't intersect anything
 
 			evt = {
@@ -732,7 +781,7 @@ describe('Core.Interaction', function() {
 				y: pt.y,
 			};
 
-			elements = Chart.Interaction.modes.y(chart, evt, {intersect: true});
+			elements = Chart.Interaction.modes.y(chart, evt, {intersect: true}).map(item => item.element);
 			expect(elements).toEqual([meta0.data[1], meta1.data[0], meta1.data[1], meta1.data[2]]);
 		});
 	});
